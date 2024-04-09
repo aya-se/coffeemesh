@@ -5,10 +5,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, conint, validator, conlist
 
+
 class Size(Enum):
     small = "small"
     medium = "medium"
     big = "big"
+
 
 class Status(Enum):
     created = "created"
@@ -17,6 +19,7 @@ class Status(Enum):
     cancelled = "cancelled"
     dispatched = "dispatched"
     delivered = "delivered"
+
 
 class OrderItemSchema(BaseModel):
     product: str
@@ -28,13 +31,16 @@ class OrderItemSchema(BaseModel):
         assert v is not None, "quantity may not be None"
         return v
 
+
 class CreateOrderSchema(BaseModel):
     order: conlist(OrderItemSchema, min_items=1)
+
 
 class GetOrderSchema(CreateOrderSchema):
     id: UUID
     created: datetime
     status: Status
+
 
 class GetOrdersSchema(BaseModel):
     orders: List[GetOrderSchema]
