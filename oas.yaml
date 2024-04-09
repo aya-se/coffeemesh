@@ -6,6 +6,8 @@ info:
   version: 1.0.0
 
 servers:
+  - url: http://localhost:8000
+    description: local development server
   - url: https://coffeemesh.com
     description: main production server
   - url: https://coffeemesh-staging.com
@@ -13,16 +15,13 @@ servers:
 
 paths:
   /orders:
-    # 注文の一覧を取得する
     get:
       parameters:
-        # キャンセルされた注文を含めるかどうか
         - name: cancelled
           in: query
           required: false
           schema:
             type: boolean
-        # 最大取得件数
         - name: limit
           in: query
           required: false
@@ -49,7 +48,6 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
 
-    # 注文を作成する
     post:
       summary: Creates an order
       operationId: createOrder
@@ -77,7 +75,6 @@ paths:
         schema:
           type: string
           format: uuid
-    # 注文の詳細を取得する
     get:
       summary: Returns the details of a specific order
       operationId: getOrder
@@ -93,7 +90,6 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
 
-    # 注文を更新する
     put:
       summary: Replaces an existing order
       operationId: updateOrder
@@ -115,7 +111,6 @@ paths:
         "422":
           $ref: "#/components/responses/UnprocessableEntity"
 
-    # 注文を削除する
     delete:
       summary: Deletes an existing order
       operationId: deleteOrder
@@ -129,15 +124,12 @@ paths:
 
   /orders/{order_id}/pay:
     parameters:
-      # 注文ID
       - in: path
         name: order_id
         required: true
         schema:
           type: string
           format: uuid
-
-    # 注文の支払いを処理する
     post:
       summary: Processes payment for an order
       operationId: payOrder
@@ -155,15 +147,12 @@ paths:
 
   /orders/{order_id}/cancel:
     parameters:
-      # 注文ID
       - in: path
         name: order_id
         required: true
         schema:
           type: string
           format: uuid
-
-    # 注文をキャンセルする
     post:
       summary: Cancels an order
       operationId: cancelOrder
@@ -220,7 +209,6 @@ components:
       required:
         - detail
 
-    # 注文アイテムのスキーマ
     OrderItemSchema:
       type: object
       required:
@@ -242,7 +230,6 @@ components:
           minimum: 1
           maximum: 1000000
 
-    # 注文のスキーマ
     CreateOrderSchema:
       type: object
       required:
@@ -254,35 +241,30 @@ components:
           items:
             $ref: "#/components/schemas/OrderItemSchema"
 
-    # 注文の詳細のスキーマ
     GetOrderSchema:
-      type: object
-      required:
-        - id
-        - created
-        - status
-        - order
-      properties:
-        id:
-          type: string
-          format: uuid
-        created:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum:
+      allOf:
+        - $ref: "#/components/schemas/CreateOrderSchema"
+        - type: object
+          required:
+            - id
             - created
-            - paid
-            - progress
-            - cancelled
-            - dispatched
-            - delivered
-        order:
-          type: array
-          minItems: 1
-          items:
-            $ref: "#/components/schemas/OrderItemSchema"
+            - status
+          properties:
+            id:
+              type: string
+              format: uuid
+            created:
+              type: string
+              format: date-time
+            status:
+              type: string
+              enum:
+                - created
+                - paid
+                - progress
+                - cancelled
+                - dispatched
+                - delivered
 
 security:
   - oauth2:
