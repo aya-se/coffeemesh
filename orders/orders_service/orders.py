@@ -9,6 +9,9 @@ class OrderItem:
         self.quantity = quantity
         self.size = size
 
+    def dict(self):
+        return {"product": self.product, "size": self.size, "quantity": self.quantity}
+
 
 class Order:
     def __init__(
@@ -29,47 +32,53 @@ class Order:
         self.schedule_id = schedule_id
         self.delivery_id = delivery_id
 
+    @property
+    def id(self):
+        return self._id or self._order.created
+
+    @property
+    def created(self):
+        return self._created or self._order.created
+
+    @property
+    def status(self):
+        return self._status or self._order.status
+
     def cancel(self):
         if self.status == "progress":
-            kitchen_base_url = "http://localhost:3000/kitchen"
             response = requests.post(
-                f"{kitchen_base_url}/schedules/{self.schedule_id}/cancel",
+                f"http://localhost:3000/kitchen/schedules/{self.schedule_id}/cancel",
                 json={"order": [item.dict() for item in self.items]},
             )
             if response.status_code == 200:
-                return True
+                return
             raise APIIntegrationError(f"Could not cancel order with id {self.id}")
         if self.status == "delivery":
-            raise InvalidActionError("Cannot cancel order with id {self.id}")
+            raise InvalidActionError(f"Cannot cancel order with id {self.id}")
 
     def pay(self):
         response = requests.post(
             "http://localhost:3001/payments", json={"order_id": self.id}
         )
-        if response.status_code == 200:
-            return True
-        raise APIIntegrationError(f"Could not payment for order with id {self.id}")
+        if response.status_code == 201:
+            return
+        raise APIIntegrationError(
+            f"Could not process payment for order with id {self.id}"
+        )
 
     def schedule(self):
         response = requests.post(
             "http://localhost:3000/kitchen/schedules",
             json={"order": [item.dict() for item in self.items]},
         )
-        if response.status_code == 200:
+        if response.status_code == 201:
             return response.json()["id"]
         raise APIIntegrationError(f"Could not schedule order with id {self.id}")
 
-
-@property
-def id(self):
-    return self._id or self._order.created
-
-
-@property
-def created(self):
-    return self._created or self._order.created
-
-
-@property
-def status(self):
-    return self._status or self._order.status
+    def dict(self):
+        return {
+            "id": self.id,
+            "order": [item.dict() for item in self.items],
+            "status": self.status,
+            "created": self.created,
+        }

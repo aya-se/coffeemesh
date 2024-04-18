@@ -14,9 +14,15 @@ class OrdersRepository:
         # レコードをビジネス層のオブジェクトに変換して返す
         return Order(**record.dict(), order_=record)
 
-    def get(self, id_):
+    def _get(self, id_):
         # SQLAlchemyのfirst()メソッドを使って、データベースからレコードを取得
         return self.session.query(OrderModel).filter(OrderModel.id == str(id_)).first()
+
+    def get(self, id_):
+        order = self._get(id_)
+        # レコードをビジネス層のオブジェクトに変換して返す
+        if order is not None:
+            return Order(**order.dict())
 
     def list(self, limit=None, **filters):
         query = self.session.query(OrderModel)
@@ -33,7 +39,7 @@ class OrdersRepository:
         return [Order(**record.dict()) for record in records]
 
     def update(self, id_, **payload):
-        record = self.get(id_)
+        record = self._get(id_)
         # ペイロードに"items"が含まれている場合、SQLAlchemyのdelete()メソッドを使って、レコードからアイテムを削除
         if "items" in payload:
             for item in record.items:
@@ -47,4 +53,4 @@ class OrdersRepository:
 
     def delete(self, id_):
         # SQLAlchemyのdelete()メソッドを使って、データベースからレコードを削除
-        self.session.delete(self.get(id_))
+        self.session.delete(self._get(id_))
